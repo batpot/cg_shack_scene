@@ -1,0 +1,74 @@
+# Blender 3.1.0 MTL File: 'None'
+# www.blender.org
+
+newmtl Default_Material
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd  Default_Material_baseColor.jpeg
+map_Bump  -bm 1.000000 Default_Material_normal.png
+
+newmtl accentMAT
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd  accentMAT_baseColor.jpeg
+map_Bump  -bm 1.000000 accentMAT_normal.png
+
+newmtl extensionMAT
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd  extensionMAT_baseColor.jpeg
+map_Bump  -bm 1.000000 extensionMAT_normal.png
+
+newmtl gymMAT
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd  gymMAT_baseColor.jpeg
+map_Bump  -bm 1.000000 gymMAT_normal.png
+
+newmtl mainMAT
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd  mainMAT_baseColor.jpeg
+map_Bump  -bm 1.000000 mainMAT_normal.png
+
+newmtl railMAT
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd  railMAT_baseColor.jpeg
+map_Bump  -bm 1.000000 railMAT_normal.png

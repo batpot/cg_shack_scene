@@ -60,7 +60,7 @@ struct ProgramState {
     float backpackScale = 1.0f;
     PointLight pointLight;
     ProgramState()
-            : camera(glm::vec3(0.0f, 0.0f, 3.0f)) {}
+            : camera(glm::vec3(4.42f, 5.3f, 14.45f)) {}
 
     void SaveToFile(std::string filename);
 
@@ -72,13 +72,13 @@ void ProgramState::SaveToFile(std::string filename) {
     out << clearColor.r << '\n'
         << clearColor.g << '\n'
         << clearColor.b << '\n'
-        << ImGuiEnabled << '\n'
-        << camera.Position.x << '\n'
-        << camera.Position.y << '\n'
-        << camera.Position.z << '\n'
-        << camera.Front.x << '\n'
-        << camera.Front.y << '\n'
-        << camera.Front.z << '\n';
+        << ImGuiEnabled << '\n';
+        //<< camera.Position.x << '\n'
+        //<< camera.Position.y << '\n'
+        //<< camera.Position.z << '\n'
+        //<< camera.Front.x << '\n'
+        //<< camera.Front.y << '\n'
+        //<< camera.Front.z << '\n';
 }
 
 void ProgramState::LoadFromFile(std::string filename) {
@@ -87,13 +87,13 @@ void ProgramState::LoadFromFile(std::string filename) {
         in >> clearColor.r
            >> clearColor.g
            >> clearColor.b
-           >> ImGuiEnabled
-           >> camera.Position.x
-           >> camera.Position.y
-           >> camera.Position.z
-           >> camera.Front.x
-           >> camera.Front.y
-           >> camera.Front.z;
+           >> ImGuiEnabled;
+           //>> camera.Position.x
+           //>> camera.Position.y
+           //>> camera.Position.z
+           //>> camera.Front.x
+           //>> camera.Front.y
+           //>> camera.Front.z;
     }
 }
 
@@ -161,12 +161,25 @@ int main() {
 
     // build and compile shaders
     // -------------------------
-    Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
+    Shader objShader("resources/shaders/model_lighting.vs", "resources/shaders/model_lighting.fs");
 
     // load models
     // -----------
-    Model ourModel("resources/objects/backpack/backpack.obj");
-    ourModel.SetShaderTextureNamePrefix("material.");
+
+    Model propModel("resources/objects/street_props/street_prop.obj");
+    propModel.SetShaderTextureNamePrefix("material.");
+
+    Model road("resources/objects/road/road.obj");
+    road.SetShaderTextureNamePrefix("material.");
+
+    Model house("resources/objects/house_of_soviets/house_of_soviets.obj");
+    house.SetShaderTextureNamePrefix("material.");
+
+    Model house2("resources/objects/pripyat/untitled.obj");
+    house2.SetShaderTextureNamePrefix("material.");
+
+    Model carousel("resources/objects/abandoned_carousel/carousel.obj");
+    carousel.SetShaderTextureNamePrefix("material.");
 
     PointLight& pointLight = programState->pointLight;
     pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
@@ -177,7 +190,6 @@ int main() {
     pointLight.constant = 1.0f;
     pointLight.linear = 0.09f;
     pointLight.quadratic = 0.032f;
-
 
 
     // draw in wireframe
@@ -203,34 +215,82 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // don't forget to enable shader before setting uniforms
-        ourShader.use();
+        objShader.use();
+
         pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
-        ourShader.setVec3("pointLight.position", pointLight.position);
-        ourShader.setVec3("pointLight.ambient", pointLight.ambient);
-        ourShader.setVec3("pointLight.diffuse", pointLight.diffuse);
-        ourShader.setVec3("pointLight.specular", pointLight.specular);
-        ourShader.setFloat("pointLight.constant", pointLight.constant);
-        ourShader.setFloat("pointLight.linear", pointLight.linear);
-        ourShader.setFloat("pointLight.quadratic", pointLight.quadratic);
-        ourShader.setVec3("viewPosition", programState->camera.Position);
-        ourShader.setFloat("material.shininess", 32.0f);
+        objShader.setVec3("pointLight.position", pointLight.position);
+        objShader.setVec3("pointLight.ambient", pointLight.ambient);
+        objShader.setVec3("pointLight.diffuse", pointLight.diffuse);
+        objShader.setVec3("pointLight.specular", pointLight.specular);
+        objShader.setFloat("pointLight.constant", pointLight.constant);
+        objShader.setFloat("pointLight.linear", pointLight.linear);
+        objShader.setFloat("pointLight.quadratic", pointLight.quadratic);
+        objShader.setVec3("viewPosition", programState->camera.Position);
+        objShader.setFloat("material.shininess", 32.0f);
+
         // view/projection transformations
-        glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
-                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+        objShader.setVec3("viewPos", programState->camera.Position);
+        objShader.setFloat("material.shininess", 32.0f);
+
+        glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom), (float)SCR_WIDTH / (float)
+        SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = programState->camera.GetViewMatrix();
-        ourShader.setMat4("projection", projection);
-        ourShader.setMat4("view", view);
+        objShader.setMat4("projection", projection);
+        objShader.setMat4("view", view);
 
-        // render the loaded model
+   /*     // street prop
+         model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-5.0f, 0.0f, -16.0f));
+        model = glm::scale(model, glm::vec3(0.24f));
+        model = glm::rotate(model, glm::radians(120.0f), glm::vec3(0,1,0));
+        //model = glm::rotate(model, glm::radians(350.0f), glm::vec3(1,0,0));
+        objShader.setMat4("model", model);
+        propModel.Draw(objShader);
+
+        */
+
+        //carousel
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model,
-                               programState->backpackPosition); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
-        ourShader.setMat4("model", model);
-        ourModel.Draw(ourShader);
+        model = glm::translate(model, glm::vec3(-7.0f, 0.0f, -20.0f));
+        model = glm::scale(model, glm::vec3(0.24f));
+        model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0,1,0));
+        //model = glm::rotate(model, glm::radians(350.0f), glm::vec3(1,0,0));
+        objShader.setMat4("model", model);
+        carousel.Draw(objShader);
 
-        if (programState->ImGuiEnabled)
-            DrawImGui(programState);
+        //road
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(1.0f));
+        model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0,1,0));
+        objShader.setMat4("model", model);
+        road.Draw(objShader);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, -10.0f));
+        model = glm::scale(model, glm::vec3(1.0f));
+        model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0,1,0));
+        objShader.setMat4("model", model);
+        road.Draw(objShader);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, -20.0f));
+        model = glm::scale(model, glm::vec3(1.0f));
+        model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0,1,0));
+        objShader.setMat4("model", model);
+        road.Draw(objShader);
+
+
+        // house
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-13.0f, 1.0f, -7.0f));
+        model = glm::scale(model, glm::vec3(3.0f));
+        model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0,1,0));
+        //model = glm::rotate(model, glm::radians(150.0f), glm::vec3(0,0,1));
+        objShader.setMat4("model", model);
+        house2.Draw(objShader);
+
+
+        //if (programState->ImGuiEnabled)
+        //    DrawImGui(programState);
 
 
 

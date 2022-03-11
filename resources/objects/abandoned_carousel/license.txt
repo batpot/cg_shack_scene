@@ -1,0 +1,11 @@
+Model Information:
+* title:	Abandoned Carousel
+* source:	https://sketchfab.com/3d-models/abandoned-carousel-84b5c7ec8fcf46309e15f6c4d0a4ddf2
+* author:	Ramil Kudashev (https://sketchfab.com/mlknz)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Abandoned Carousel" (https://sketchfab.com/3d-models/abandoned-carousel-84b5c7ec8fcf46309e15f6c4d0a4ddf2) by Ramil Kudashev (https://sketchfab.com/mlknz) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
