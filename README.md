@@ -1,5 +1,4 @@
-# project_base
-Prazan projekat sa pratećim bibliotekama koje koristimo na času. 
+# cabin scene
 
 # Uputstvo
 1. `git clone https://github.com/matf-racunarska-grafika/project_base.git`
@@ -11,8 +10,8 @@ Prazan projekat sa pratećim bibliotekama koje koristimo na času.
 7. ALT+SHIFT+F10 -> project_base -> run
 
 # TODOs:
-- [ ] fix the objects (weird colour)
-- [ ] add texture around the road object
+- [x] fix the objects (weird colour)
+- [ ] fix skybox (bad cropping)
 
 # Project progress checklist
 required elements
@@ -20,24 +19,22 @@ required elements
 - [ ] textures
 - [ ] transformations
 - [ ] coordinate systems: local space, world space, view space, clip space, screen space
-- [ ] camera
+- [x] camera
 - [ ] colors
 - [ ] basic lighting
 - [ ] materials
 - [ ] light: diffuse, specular
-- [ ] assimp, mesh, models
+- [x] assimp, mesh, models
 - [ ] blender
 - [ ] model and lighting
 - [ ] imgui
 - [ ] blending
 - [ ] face culling
 - [ ] advanced lighting
-- [ ] A: Framebuffers, Cubemaps, Instancing, Anti Aliasing
+- [x] A: Framebuffers, Cubemaps, Instancing, Anti Aliasing
 - [ ] B: Point shadows; Normal mapping, Parallax Mapping; HDR; Bloom; Deffered Shading; SSAO
 
 other
-- [ ] street
-- [ ] building 1
-- [ ] building 2
-- [ ] lantern
-- [ ] rain
+- [ ] scene
+- [ ] lantern + light
+- [ ] rain/well

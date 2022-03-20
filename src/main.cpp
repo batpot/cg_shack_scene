@@ -26,12 +26,13 @@ void processInput(GLFWwindow *window);
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
+unsigned int loadCubemap(vector<std::string> faces);
+
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 900;
+const unsigned int SCR_HEIGHT = 900;
 
 // camera
-
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -56,11 +57,11 @@ struct ProgramState {
     bool ImGuiEnabled = false;
     Camera camera;
     bool CameraMouseMovementUpdateEnabled = true;
-    glm::vec3 backpackPosition = glm::vec3(0.0f);
+    glm::vec3 backpackPosition = glm::vec3(0.0f, 3.0f, 0.0f);
     float backpackScale = 1.0f;
     PointLight pointLight;
     ProgramState()
-            : camera(glm::vec3(4.42f, 5.3f, 14.45f)) {}
+            : camera(glm::vec3(0.0f, 0.0f, 30.0f)) {}
 
     void SaveToFile(std::string filename);
 
@@ -115,7 +116,7 @@ int main() {
 
     // glfw window creation
     // --------------------
-    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "CyberCity", NULL, NULL);
     if (window == NULL) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -137,7 +138,7 @@ int main() {
     }
 
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
-    stbi_set_flip_vertically_on_load(true);
+    //stbi_set_flip_vertically_on_load(true);
 
     programState = new ProgramState;
     programState->LoadFromFile("resources/program_state.txt");
@@ -161,25 +162,95 @@ int main() {
 
     // build and compile shaders
     // -------------------------
-    Shader objShader("resources/shaders/model_lighting.vs", "resources/shaders/model_lighting.fs");
+    Shader objShader("resources/shaders/model_loading.vs", "resources/shaders/model_loading.fs");
+    Shader skyboxShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
+    Shader lightShader("resources/shaders/light_source.vs", "resources/shaders/light_source.fs");
 
     // load models
-    // -----------
+    Model deadTree("resources/objects/dead_tree/dead_tree.obj");
+    deadTree.SetShaderTextureNamePrefix("material.");
 
-    Model propModel("resources/objects/street_props/street_prop.obj");
-    propModel.SetShaderTextureNamePrefix("material.");
+    Model scene("resources/objects/shack_scene/untitled.obj");
+    scene.SetShaderTextureNamePrefix("material.");
 
-    Model road("resources/objects/road/road.obj");
-    road.SetShaderTextureNamePrefix("material.");
+    Model lantern("resources/objects/lantern/lantern.obj");
+    lantern.SetShaderTextureNamePrefix("material.");
 
-    Model house("resources/objects/house_of_soviets/house_of_soviets.obj");
-    house.SetShaderTextureNamePrefix("material.");
+    Model lamp("resources/objects/lamp/lamp.obj");
+    lamp.SetShaderTextureNamePrefix("material.");
 
-    Model house2("resources/objects/pripyat/untitled.obj");
-    house2.SetShaderTextureNamePrefix("material.");
+    //set up skybox vertex data
+    float skyboxVertices[] = {
+            // positions
+            -1.0f,  1.0f, -1.0f,
+            -1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
 
-    Model carousel("resources/objects/abandoned_carousel/carousel.obj");
-    carousel.SetShaderTextureNamePrefix("material.");
+            -1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+
+            -1.0f, -1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+
+            -1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f, -1.0f,
+
+            -1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f
+    };
+
+    // skybox VAO
+    unsigned int skyboxVAO, skyboxVBO;
+    glGenVertexArrays(1, &skyboxVAO);
+    glGenBuffers(1, &skyboxVBO);
+    glBindVertexArray(skyboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // load skybox
+    vector<std::string> faces
+            {
+                    FileSystem::getPath("resources/textures/sky/right.jpg"),
+                    FileSystem::getPath("resources/textures/sky/left.jpg"),
+                    FileSystem::getPath("resources/textures/sky/bottom.jpg"),
+                    FileSystem::getPath("resources/textures/sky/top.jpg"),
+                    FileSystem::getPath("resources/textures/sky/front.jpg"),
+                    FileSystem::getPath("resources/textures/sky/back.jpg")
+            };
+    stbi_set_flip_vertically_on_load(true);
+    unsigned int cubemapTexture = loadCubemap(faces);
+    stbi_set_flip_vertically_on_load(false);
+
+    skyboxShader.use();
+    skyboxShader.setInt("skybox", 0);
 
     PointLight& pointLight = programState->pointLight;
     pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
@@ -190,7 +261,6 @@ int main() {
     pointLight.constant = 1.0f;
     pointLight.linear = 0.09f;
     pointLight.quadratic = 0.032f;
-
 
     // draw in wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -204,17 +274,27 @@ int main() {
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        // input
-        // -----
         processInput(window);
 
-
-        // render
-        // ------
         glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // don't forget to enable shader before setting uniforms
+        // activate shader
+        objShader.use();
+        // objShader.setVec3("objectColor", 1.0f, 0.5f, 0.3f); //ambient
+        objShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+        objShader.setVec3("lightPos", glm::vec3(1.0f, 1.0f, 1.0f));
+        objShader.setVec3("viewPos", glm::vec3(1.0f, 1.0f, 1.0f));
+        objShader.setFloat("material.shininess", 32.0f);
+        objShader.setBool("celShading", true);
+
+        //view/projection transformations
+        glm::mat4 view = programState->camera.GetViewMatrix();
+        glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom), (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+        objShader.setMat4("projection", projection);
+        objShader.setMat4("view", view);
+
+        /*// don't forget to enable shader before setting uniforms
         objShader.use();
 
         pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
@@ -227,71 +307,112 @@ int main() {
         objShader.setFloat("pointLight.quadratic", pointLight.quadratic);
         objShader.setVec3("viewPosition", programState->camera.Position);
         objShader.setFloat("material.shininess", 32.0f);
-
-        // view/projection transformations
-        objShader.setVec3("viewPos", programState->camera.Position);
-        objShader.setFloat("material.shininess", 32.0f);
-
-        glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom), (float)SCR_WIDTH / (float)
-        SCR_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = programState->camera.GetViewMatrix();
-        objShader.setMat4("projection", projection);
-        objShader.setMat4("view", view);
-
-   /*     // street prop
-         model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(-5.0f, 0.0f, -16.0f));
-        model = glm::scale(model, glm::vec3(0.24f));
-        model = glm::rotate(model, glm::radians(120.0f), glm::vec3(0,1,0));
-        //model = glm::rotate(model, glm::radians(350.0f), glm::vec3(1,0,0));
-        objShader.setMat4("model", model);
-        propModel.Draw(objShader);
-
         */
 
-        //carousel
+        glm::mat4 lightModel = glm::mat4(1.0f);
+        lightModel = glm::translate(lightModel, glm::vec3(-24.0f, -7.3f, -0.5f));
+        lightModel = glm::scale(lightModel, glm::vec3(0.3f));
+        lightModel = glm::rotate(lightModel, glm::radians(55.0f), glm::vec3(0,1,0));
+
+        // rendering the loaded models
+
+        //scene
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(-7.0f, 0.0f, -20.0f));
-        model = glm::scale(model, glm::vec3(0.24f));
-        model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0,1,0));
-        //model = glm::rotate(model, glm::radians(350.0f), glm::vec3(1,0,0));
-        objShader.setMat4("model", model);
-        carousel.Draw(objShader);
-
-        //road
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(1.0f));
-        model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0,1,0));
-        objShader.setMat4("model", model);
-        road.Draw(objShader);
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, -10.0f));
-        model = glm::scale(model, glm::vec3(1.0f));
-        model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0,1,0));
-        objShader.setMat4("model", model);
-        road.Draw(objShader);
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, -20.0f));
-        model = glm::scale(model, glm::vec3(1.0f));
-        model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0,1,0));
-        objShader.setMat4("model", model);
-        road.Draw(objShader);
-
-
-        // house
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(-13.0f, 1.0f, -7.0f));
+        model = glm::translate(model, glm::vec3(0.0f, -10.0f, -10.0f));
         model = glm::scale(model, glm::vec3(3.0f));
-        model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0,1,0));
-        //model = glm::rotate(model, glm::radians(150.0f), glm::vec3(0,0,1));
         objShader.setMat4("model", model);
-        house2.Draw(objShader);
+        scene.Draw(objShader);
 
+        //tree1
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(20.0f, -10.0f, -10.0f));
+        model = glm::scale(model, glm::vec3(3.0f));
+        objShader.setMat4("model", model);
+        deadTree.Draw(objShader);
+
+        //tree2
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(15.0f, -10.0f, -30.0f));
+        model = glm::scale(model, glm::vec3(3.0f));
+        model = glm::rotate(model, glm::radians(145.0f), glm::vec3(0,1,0));
+        objShader.setMat4("model", model);
+        deadTree.Draw(objShader);
+
+        //tree3
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-30.0f, -10.0f, -30.0f));
+        model = glm::scale(model, glm::vec3(3.0f));
+        model = glm::rotate(model, glm::radians(55.0f), glm::vec3(0,1,0));
+        objShader.setMat4("model", model);
+        deadTree.Draw(objShader);
+
+        //lantern
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-24.0f, -7.3f, -0.5f));
+        model = glm::scale(model, glm::vec3(0.2f));
+        model = glm::rotate(model, glm::radians(55.0f), glm::vec3(0,1,0));
+        objShader.setMat4("model", model);
+        lantern.Draw(objShader);
+
+        //lantern
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-24.0f, -13.0f, -4.0f));
+        model = glm::scale(model, glm::vec3(0.3f));
+        model = glm::rotate(model, glm::radians(55.0f), glm::vec3(0,1,0));
+        objShader.setMat4("model", model);
+        lamp.Draw(objShader);
+
+        //TODO light
+        glm::vec3 lightColor = glm::vec3(1.0f, 0.3f, 0.3f);
+
+        lightShader.use();
+        view = programState->camera.GetViewMatrix();
+        projection = glm::perspective(glm::radians(programState->camera.Zoom), (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+        lightShader.setMat4("projection", projection);
+        lightShader.setMat4("view", view);
+        lightShader.setVec3("lightColor", lightColor);
+        lightShader.setMat4("model", lightModel);
+        lantern.Draw(lightShader);
+
+        //skybox
+        glDepthMask(GL_FALSE);
+        glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+        skyboxShader.use();
+        view = glm::mat4(glm::mat3(programState->camera.GetViewMatrix())); // remove translation from the view matrix
+        skyboxShader.setMat4("view", view);
+        skyboxShader.setMat4("projection", projection);
+
+
+        // skybox cube
+        glBindVertexArray(skyboxVAO);
+        //glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+        glDepthFunc(GL_LESS); // set depth function back to default
+        glDepthMask(GL_TRUE);
+
+        /*
+         * glDepthMask(GL_FALSE);
+        glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+        skyboxShader.use();
+        view = glm::mat4(glm::mat3(programState->camera.GetViewMatrix())); // remove translation from the view matrix
+        skyboxShader.setMat4("view", view);
+        skyboxShader.setMat4("projection", projection);
+
+
+        // skybox cube
+        glBindVertexArray(skyboxVAO);
+        //glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        //glBindVertexArray(0);
+        //glDepthFunc(GL_LESS); // set depth function back to default
+        glDepthMask(GL_TRUE);
+         */
 
         //if (programState->ImGuiEnabled)
         //    DrawImGui(programState);
-
 
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -405,4 +526,36 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }
     }
+}
+
+unsigned int loadCubemap(vector<std::string> faces)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    int width, height, nrChannels;
+    for (unsigned int i = 0; i < faces.size(); i++)
+    {
+        unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                         0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
+            );
+            stbi_image_free(data);
+        }
+        else
+        {
+            std::cout << "Cubemap tex failed to load at path: " << faces[i] << std::endl;
+            stbi_image_free(data);
+        }
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return textureID;
 }
