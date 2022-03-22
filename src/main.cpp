@@ -28,6 +28,10 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
 unsigned int loadCubemap(vector<std::string> faces);
 
+unsigned int loadTexture(char const *path);
+
+void setWoodenBox(Shader &lightingShader, unsigned int diffuseMap, unsigned int specularMap, unsigned int boxVAO);
+
 // settings
 const unsigned int SCR_WIDTH = 900;
 const unsigned int SCR_HEIGHT = 900;
@@ -151,8 +155,6 @@ int main() {
     ImGuiIO &io = ImGui::GetIO();
     (void) io;
 
-
-
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330 core");
 
@@ -161,10 +163,9 @@ int main() {
     glEnable(GL_DEPTH_TEST);
 
     // build and compile shaders
-    // -------------------------
-    Shader objShader("resources/shaders/model_loading.vs", "resources/shaders/model_loading.fs");
+    Shader objShader("resources/shaders/model_lighting.vs", "resources/shaders/model_lighting.fs");
     Shader skyboxShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
-    Shader lightShader("resources/shaders/light_source.vs", "resources/shaders/light_source.fs");
+    Shader lightingShader("resources/shaders/lightning_maps.vs", "resources/shaders/lightning_maps.fs");
 
     // load models
     Model deadTree("resources/objects/dead_tree/dead_tree.obj");
@@ -173,8 +174,14 @@ int main() {
     Model scene("resources/objects/shack_scene/untitled.obj");
     scene.SetShaderTextureNamePrefix("material.");
 
-    Model lantern("resources/objects/lantern/lantern.obj");
-    lantern.SetShaderTextureNamePrefix("material.");
+    Model redLantern("resources/objects/red_lantern/red_lantern.obj");
+    redLantern.SetShaderTextureNamePrefix("material.");
+
+    Model greenLantern("resources/objects/green_lantern/green_lantern.obj");
+    greenLantern.SetShaderTextureNamePrefix("material.");
+
+    Model bronzeLantern("resources/objects/bronze_lantern/bronze_lantern.obj");
+    bronzeLantern.SetShaderTextureNamePrefix("material.");
 
     Model lamp("resources/objects/lamp/lamp.obj");
     lamp.SetShaderTextureNamePrefix("material.");
@@ -225,6 +232,67 @@ int main() {
             1.0f, -1.0f,  1.0f
     };
 
+    // set up vertex data (and buffer(s)) and configure vertex attributes
+    float vertices[] = {
+            // positions          // normals           // texture coords
+            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
+            0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  0.0f,
+            0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
+            0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
+
+            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
+            0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  0.0f,
+            0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
+            0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
+
+            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+            -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+            -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
+            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+
+            0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+            0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
+            0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+            0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+            0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+
+            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
+            0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  1.0f,
+            0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
+            0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
+
+            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
+            0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  1.0f,
+            0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
+            0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
+    };
+    //the box's VAO (and VBO)
+    unsigned int VBO, boxVAO;
+    glGenVertexArrays(1, &boxVAO);
+    glGenBuffers(1, &VBO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glBindVertexArray(boxVAO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
     // skybox VAO
     unsigned int skyboxVAO, skyboxVBO;
     glGenVertexArrays(1, &skyboxVAO);
@@ -245,18 +313,30 @@ int main() {
                     FileSystem::getPath("resources/textures/sky/front.jpg"),
                     FileSystem::getPath("resources/textures/sky/back.jpg")
             };
+
+    // load cubemap
     stbi_set_flip_vertically_on_load(true);
     unsigned int cubemapTexture = loadCubemap(faces);
     stbi_set_flip_vertically_on_load(false);
 
+    // load textures for the box
+    unsigned int diffuseMap = loadTexture(FileSystem::getPath("resources/textures/box/Wood_Shingles_001_basecolor.jpg").c_str());
+    unsigned int specularMap = loadTexture(FileSystem::getPath("resources/textures/box/Wood_Shingles_001_height.png").c_str());
+
+    // shader configuration
+    lightingShader.use();
+    lightingShader.setInt("material.diffuse", 0);
+    lightingShader.setInt("material.specular", 1);
+
+    // set skyboxShader
     skyboxShader.use();
     skyboxShader.setInt("skybox", 0);
 
     PointLight& pointLight = programState->pointLight;
-    pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
-    pointLight.ambient = glm::vec3(0.1, 0.1, 0.1);
-    pointLight.diffuse = glm::vec3(0.6, 0.6, 0.6);
-    pointLight.specular = glm::vec3(1.0, 1.0, 1.0);
+    pointLight.position = glm::vec3(10.0f, -10.0, -10.0);
+    pointLight.ambient = glm::vec3(0.05, 0.05, 0.05);
+    pointLight.diffuse = glm::vec3(0.4, 0.4, 0.6);
+    pointLight.specular = glm::vec3(0.0, 0.0, 0.0);
 
     pointLight.constant = 1.0f;
     pointLight.linear = 0.09f;
@@ -279,25 +359,11 @@ int main() {
         glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        setWoodenBox(objShader, diffuseMap, specularMap, boxVAO);
+
         // activate shader
         objShader.use();
-        // objShader.setVec3("objectColor", 1.0f, 0.5f, 0.3f); //ambient
-        objShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-        objShader.setVec3("lightPos", glm::vec3(1.0f, 1.0f, 1.0f));
-        objShader.setVec3("viewPos", glm::vec3(1.0f, 1.0f, 1.0f));
-        objShader.setFloat("material.shininess", 32.0f);
-        objShader.setBool("celShading", true);
-
-        //view/projection transformations
-        glm::mat4 view = programState->camera.GetViewMatrix();
-        glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom), (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
-        objShader.setMat4("projection", projection);
-        objShader.setMat4("view", view);
-
-        /*// don't forget to enable shader before setting uniforms
-        objShader.use();
-
-        pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
+        pointLight.position = glm::vec3(10.0, -10.0, -10.0);
         objShader.setVec3("pointLight.position", pointLight.position);
         objShader.setVec3("pointLight.ambient", pointLight.ambient);
         objShader.setVec3("pointLight.diffuse", pointLight.diffuse);
@@ -307,12 +373,61 @@ int main() {
         objShader.setFloat("pointLight.quadratic", pointLight.quadratic);
         objShader.setVec3("viewPosition", programState->camera.Position);
         objShader.setFloat("material.shininess", 32.0f);
-        */
 
-        glm::mat4 lightModel = glm::mat4(1.0f);
-        lightModel = glm::translate(lightModel, glm::vec3(-24.0f, -7.3f, -0.5f));
-        lightModel = glm::scale(lightModel, glm::vec3(0.3f));
-        lightModel = glm::rotate(lightModel, glm::radians(55.0f), glm::vec3(0,1,0));
+        // view/projection transformations
+        glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
+                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 view = programState->camera.GetViewMatrix();
+        objShader.setMat4("projection", projection);
+        objShader.setMat4("view", view);
+
+        // directional light
+        objShader.use();
+        objShader.setVec3("dirLight.direction", 10.0f, -10.0f, -10.0f);
+        objShader.setVec3("dirLight.ambient", 0.4f, 0.4f, 0.20f);
+        objShader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.6f);
+        objShader.setVec3("dirLight.specular", 1.0f, 1.0f, 0.7f);
+
+        // point light 1 - green lantern
+        objShader.setVec3("pointLights[0].position", glm::vec3(10.0f, -11.0f, -25.0f));
+        objShader.setVec3("pointLights[0].ambient", 0.05f, 0.05f, 0.05f);
+        objShader.setVec3("pointLights[0].diffuse", 0.94f, 0.98f, 0.78f);
+        objShader.setVec3("pointLights[0].specular", 0.9f, 0.98f, 0.78f);
+        objShader.setFloat("pointLights[0].constant", 1.0f);
+        objShader.setFloat("pointLights[0].linear", 0.2);
+        objShader.setFloat("pointLights[0].quadratic", 0.1);
+
+        //point light 2 - red lantern TODO not working ???
+        objShader.setVec3("pointLights[1].position", glm::vec3(-24.0f, -7.0f, -0.5f));
+        objShader.setVec3("pointLights[1].ambient",  0.05f, 0.05f, 0.05f);
+        objShader.setVec3("pointLights[1].diffuse", 0.94f, 0.98f, 0.78f);
+        objShader.setVec3("pointLights[1].specular", 0.94f, 0.98f, 0.78f);
+        objShader.setFloat("pointLights[1].constant", 1.0f);
+        objShader.setFloat("pointLights[1].linear", 0.2f);
+        objShader.setFloat("pointLights[1].quadratic", 0.5f);
+
+        //point light 3 - bronze lantern
+        objShader.setVec3("pointLights[2].position", glm::vec3(17.0f, -12.5f, -7.0f));
+        objShader.setVec3("pointLights[2].ambient",  0.05f, 0.05f, 0.05f);
+        objShader.setVec3("pointLights[2].diffuse", 0.94f, 0.98f, 0.78f);
+        objShader.setVec3("pointLights[2].specular", 0.94f, 0.98f, 0.78f);
+        objShader.setFloat("pointLights[2].constant", 1.0f);
+        objShader.setFloat("pointLights[2].linear", 0.2f);
+        objShader.setFloat("pointLights[2].quadratic", 0.1f);
+
+        //spotlight 1
+       /* objShader.setVec3("spotLights[0].position", glm::vec3(10.0f, 40.0f, 10.0f));
+        objShader.setVec3("spotLights[0].direction", glm::vec3(0.0f, 0.0f, 0.0f));
+        objShader.setVec3("spotLights[0].ambient", 0.05f, 0.05f, 0.05f);
+        objShader.setVec3("spotLights[0].diffuse", 0.1f, 0.1f, 0.1f);
+        objShader.setVec3("spotLights[0].specular", 0.0f, 1.0f, 0.0f);
+
+        objShader.setFloat("spotLights[0].constant", 1.0f);
+        objShader.setFloat("spotLights[0].linear", 0.09);
+        objShader.setFloat("spotLights[0].quadratic", 0.032);
+        objShader.setFloat("spotLights[0].cutOff", glm::cos(glm::radians(2.5f)));
+        objShader.setFloat("spotLights[0].outerCutOff", glm::cos(glm::radians(5.0f)));
+*/
 
         // rendering the loaded models
 
@@ -323,14 +438,14 @@ int main() {
         objShader.setMat4("model", model);
         scene.Draw(objShader);
 
-        //tree1
+        //tree1 - front, right
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(20.0f, -10.0f, -10.0f));
         model = glm::scale(model, glm::vec3(3.0f));
         objShader.setMat4("model", model);
         deadTree.Draw(objShader);
 
-        //tree2
+        //tree2 - back, right
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(15.0f, -10.0f, -30.0f));
         model = glm::scale(model, glm::vec3(3.0f));
@@ -338,7 +453,7 @@ int main() {
         objShader.setMat4("model", model);
         deadTree.Draw(objShader);
 
-        //tree3
+        //tree3 - back, left
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(-30.0f, -10.0f, -30.0f));
         model = glm::scale(model, glm::vec3(3.0f));
@@ -346,13 +461,29 @@ int main() {
         objShader.setMat4("model", model);
         deadTree.Draw(objShader);
 
-        //lantern
+        //red lantern
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(-24.0f, -7.3f, -0.5f));
         model = glm::scale(model, glm::vec3(0.2f));
         model = glm::rotate(model, glm::radians(55.0f), glm::vec3(0,1,0));
         objShader.setMat4("model", model);
-        lantern.Draw(objShader);
+        redLantern.Draw(objShader);
+
+        //green lantern
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(10.0f, -10.0f, -25.0f));
+        model = glm::scale(model, glm::vec3(0.007f));
+        model = glm::rotate(model, glm::radians(55.0f), glm::vec3(0,1,0));
+        objShader.setMat4("model", model);
+        greenLantern.Draw(objShader);
+
+        //bronze lantern
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(17.0f, -9.5f, -7.0f));
+        model = glm::scale(model, glm::vec3(0.4f));
+        model = glm::rotate(model, glm::radians(55.0f), glm::vec3(0,1,0));
+        objShader.setMat4("model", model);
+        bronzeLantern.Draw(objShader);
 
         //lantern
         model = glm::mat4(1.0f);
@@ -362,17 +493,6 @@ int main() {
         objShader.setMat4("model", model);
         lamp.Draw(objShader);
 
-        //TODO light
-        glm::vec3 lightColor = glm::vec3(1.0f, 0.3f, 0.3f);
-
-        lightShader.use();
-        view = programState->camera.GetViewMatrix();
-        projection = glm::perspective(glm::radians(programState->camera.Zoom), (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
-        lightShader.setMat4("projection", projection);
-        lightShader.setMat4("view", view);
-        lightShader.setVec3("lightColor", lightColor);
-        lightShader.setMat4("model", lightModel);
-        lantern.Draw(lightShader);
 
         //skybox
         glDepthMask(GL_FALSE);
@@ -381,7 +501,6 @@ int main() {
         view = glm::mat4(glm::mat3(programState->camera.GetViewMatrix())); // remove translation from the view matrix
         skyboxShader.setMat4("view", view);
         skyboxShader.setMat4("projection", projection);
-
 
         // skybox cube
         glBindVertexArray(skyboxVAO);
@@ -558,4 +677,83 @@ unsigned int loadCubemap(vector<std::string> faces)
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
     return textureID;
+}
+
+unsigned int loadTexture(char const *path)
+{
+    unsigned textureId;
+    glGenTextures(1, &textureId);
+
+    int width, height, nrComponents;
+    unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
+
+    if(data)
+    {
+        GLenum format;
+        if(nrComponents == 1)
+            format = GL_RED;
+        else if(nrComponents == 3)
+            format = GL_RGB;
+        else if(nrComponents == 4)
+            format = GL_RGBA;
+
+        glBindTexture(GL_TEXTURE_2D, textureId);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        stbi_image_free(data);
+
+    }
+    else
+    {
+        cout << "Texture failed to load!" << path << "\n";
+        stbi_image_free(data);
+
+    }
+
+    return textureId;
+}
+
+void setWoodenBox(Shader &lightingShader, unsigned int diffuseMap, unsigned int specularMap, unsigned int boxVAO)
+{
+    //set shader
+    lightingShader.use();
+    lightingShader.setVec3("light.position", glm::vec3(10.0, 10.0, 5.0));
+    lightingShader.setVec3("viewPos", programState->camera.Position);
+
+    // light properties
+    lightingShader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
+    lightingShader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+    lightingShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+
+    // material properties
+    lightingShader.setFloat("material.shininess", 64.0f);
+
+    // view/projection transformations
+    glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    glm::mat4 view = programState->camera.GetViewMatrix();
+    lightingShader.setMat4("projection", projection);
+    lightingShader.setMat4("view", view);
+
+    // world transformation
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(17.0f, -10.0f, -7.0f));
+    lightingShader.setMat4("model", model);
+
+    // bind diffuse map
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, diffuseMap);
+    // bind specular map
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, specularMap);
+
+    // render the cube
+    glBindVertexArray(boxVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
 }

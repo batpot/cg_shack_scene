@@ -1,0 +1,32 @@
+# Blender 3.1.0 MTL File: 'None'
+# www.blender.org
+
+newmtl StingrayPBS1SG
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.000000 0.000000 0.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 0.000000
+d 1.000000
+illum 1
+map_Kd lantern_Base_Color.jpg
+map_Bump lantern_Normal_OpenGL.jpg
+map_Pm lantern_Metallic.jpg
+map_Pr lantern_Roughness.jpg
+map_Ks lantern_Opacity.jpg
+
+newmtl StingrayPBS2SG
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.000000 0.000000 0.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 0.000000
+d 1.000000
+illum 1
+map_Kd lantern_Base_Color.jpg
+map_Bump lantern_Normal_OpenGL.jpg
+map_Pm lantern_Metallic.jpg
+map_Pr lantern_Roughness.jpg
+map_Ks lantern_Opacity.jpg

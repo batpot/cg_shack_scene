@@ -1,0 +1,33 @@
+# 3ds Max Wavefront OBJ Exporter v0.97b - (c)2007 guruware
+# File Created: 08.07.2019 18:45:31
+
+newmtl Metall
+	Ns 46.4386
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.0000 0.0000 0.0000
+	Kd 0.0014 0.0375 0.0000
+	Ks 0.0003 0.0094 0.0000
+	Ke 0.0000 0.0000 0.0000
+	
+	map_Kd Lamp_diff.png
+	map_Bump Lamp_norm.png
+	map_Pr Lamp_rough.png
+
+
+newmtl wire_204204204
+	Ns 32
+	d 1
+	Tr 0
+	Tf 1 1 1
+	illum 2
+	Ka 0.8000 0.8000 0.8000
+	Kd 0.8000 0.8000 0.8000
+	Ks 0.3500 0.3500 0.3500
+	map_Kd Glass.png
+	map_Bump Lamp_norm.png
+	map_Pr Glass_rough.png
+
