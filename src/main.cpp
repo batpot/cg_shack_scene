@@ -16,21 +16,18 @@
 
 #include <iostream>
 
+using namespace std;
+
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
-
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
-
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
-
 void processInput(GLFWwindow *window);
-
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
-
-unsigned int loadCubemap(vector<std::string> faces);
-
+unsigned int loadCubemap(vector<string> faces);
 unsigned int loadTexture(char const *path);
-
 void setWoodenBox(Shader &lightingShader, unsigned int diffuseMap, unsigned int specularMap, unsigned int boxVAO);
+void renderModel(Shader &ourShader, Model &ourModel, glm::vec3 translateVec, glm::vec3 scalarVec, glm::vec3 rotateVec,
+                 float angle, bool rotate = false);
 
 // settings
 const unsigned int SCR_WIDTH = 900;
@@ -183,9 +180,6 @@ int main() {
     Model bronzeLantern("resources/objects/bronze_lantern/bronze_lantern.obj");
     bronzeLantern.SetShaderTextureNamePrefix("material.");
 
-    Model lamp("resources/objects/lamp/lamp.obj");
-    lamp.SetShaderTextureNamePrefix("material.");
-
     //set up skybox vertex data
     float skyboxVertices[] = {
             // positions
@@ -277,12 +271,12 @@ int main() {
             -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
             -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
     };
-    //the box's VAO (and VBO)
-    unsigned int VBO, boxVAO;
+    //the box's VAO (and boxVBO)
+    unsigned int boxVBO, boxVAO;
     glGenVertexArrays(1, &boxVAO);
-    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &boxVBO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, boxVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     glBindVertexArray(boxVAO);
@@ -333,14 +327,6 @@ int main() {
     skyboxShader.setInt("skybox", 0);
 
     PointLight& pointLight = programState->pointLight;
-    pointLight.position = glm::vec3(10.0f, -10.0, -10.0);
-    pointLight.ambient = glm::vec3(0.05, 0.05, 0.05);
-    pointLight.diffuse = glm::vec3(0.4, 0.4, 0.6);
-    pointLight.specular = glm::vec3(0.0, 0.0, 0.0);
-
-    pointLight.constant = 1.0f;
-    pointLight.linear = 0.09f;
-    pointLight.quadratic = 0.032f;
 
     // draw in wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -359,32 +345,23 @@ int main() {
         glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        setWoodenBox(objShader, diffuseMap, specularMap, boxVAO);
+        setWoodenBox(lightingShader, diffuseMap, specularMap, boxVAO);
 
-        // activate shader
-        objShader.use();
-        pointLight.position = glm::vec3(10.0, -10.0, -10.0);
-        objShader.setVec3("pointLight.position", pointLight.position);
-        objShader.setVec3("pointLight.ambient", pointLight.ambient);
-        objShader.setVec3("pointLight.diffuse", pointLight.diffuse);
-        objShader.setVec3("pointLight.specular", pointLight.specular);
-        objShader.setFloat("pointLight.constant", pointLight.constant);
-        objShader.setFloat("pointLight.linear", pointLight.linear);
-        objShader.setFloat("pointLight.quadratic", pointLight.quadratic);
-        objShader.setVec3("viewPosition", programState->camera.Position);
-        objShader.setFloat("material.shininess", 32.0f);
-
-        // view/projection transformations
+        // view/projection transformations + activate shader
         glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
                                                 (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = programState->camera.GetViewMatrix();
+
+        objShader.use();
+        objShader.setVec3("viewPosition", programState->camera.Position);
+        objShader.setFloat("material.shininess", 32.0f);
         objShader.setMat4("projection", projection);
         objShader.setMat4("view", view);
 
         // directional light
         objShader.use();
-        objShader.setVec3("dirLight.direction", 10.0f, -10.0f, -10.0f);
-        objShader.setVec3("dirLight.ambient", 0.4f, 0.4f, 0.20f);
+        objShader.setVec3("dirLight.direction", 30.0f, -10.0f, 30.0f);
+        objShader.setVec3("dirLight.ambient", 0.5f, 0.5f, 0.5f);
         objShader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.6f);
         objShader.setVec3("dirLight.specular", 1.0f, 1.0f, 0.7f);
 
@@ -432,66 +409,32 @@ int main() {
         // rendering the loaded models
 
         //scene
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, -10.0f, -10.0f));
-        model = glm::scale(model, glm::vec3(3.0f));
-        objShader.setMat4("model", model);
-        scene.Draw(objShader);
+        renderModel(objShader, scene, glm::vec3(0.0f, -10.0f, -10.0f),
+                    glm::vec3(3.0f), glm::vec3(0.0f), 0.0f, false);
 
         //tree1 - front, right
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(20.0f, -10.0f, -10.0f));
-        model = glm::scale(model, glm::vec3(3.0f));
-        objShader.setMat4("model", model);
-        deadTree.Draw(objShader);
+        renderModel(objShader, deadTree, glm::vec3(20.0f, -10.0f, -10.0f),
+                    glm::vec3(3.0f), glm::vec3(0.0f), 0.0f, false);
 
         //tree2 - back, right
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(15.0f, -10.0f, -30.0f));
-        model = glm::scale(model, glm::vec3(3.0f));
-        model = glm::rotate(model, glm::radians(145.0f), glm::vec3(0,1,0));
-        objShader.setMat4("model", model);
-        deadTree.Draw(objShader);
+        renderModel(objShader, deadTree, glm::vec3(15.0f, -10.0f, -30.0f),
+                    glm::vec3(3.0f), glm::vec3(0,1,0), 145.0f,true);
 
         //tree3 - back, left
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(-30.0f, -10.0f, -30.0f));
-        model = glm::scale(model, glm::vec3(3.0f));
-        model = glm::rotate(model, glm::radians(55.0f), glm::vec3(0,1,0));
-        objShader.setMat4("model", model);
-        deadTree.Draw(objShader);
+        renderModel(objShader, deadTree, glm::vec3(-30.0f, -10.0f, -30.0f),
+                    glm::vec3(3.0f), glm::vec3(0,1,0), 55.0f,true);
 
         //red lantern
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(-24.0f, -7.3f, -0.5f));
-        model = glm::scale(model, glm::vec3(0.2f));
-        model = glm::rotate(model, glm::radians(55.0f), glm::vec3(0,1,0));
-        objShader.setMat4("model", model);
-        redLantern.Draw(objShader);
+        renderModel(objShader, redLantern, glm::vec3(-24.0f, -7.3f, -0.5f),
+                    glm::vec3(0.2f), glm::vec3(0,1,0), 55.0f,true);
 
         //green lantern
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(10.0f, -10.0f, -25.0f));
-        model = glm::scale(model, glm::vec3(0.007f));
-        model = glm::rotate(model, glm::radians(55.0f), glm::vec3(0,1,0));
-        objShader.setMat4("model", model);
-        greenLantern.Draw(objShader);
+        renderModel(objShader, greenLantern, glm::vec3(10.0f, -10.0f, -25.0f),
+                    glm::vec3(0.007f), glm::vec3(0,1,0), 55.0f,true);
 
         //bronze lantern
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(17.0f, -9.5f, -7.0f));
-        model = glm::scale(model, glm::vec3(0.4f));
-        model = glm::rotate(model, glm::radians(55.0f), glm::vec3(0,1,0));
-        objShader.setMat4("model", model);
-        bronzeLantern.Draw(objShader);
-
-        //lantern
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(-24.0f, -13.0f, -4.0f));
-        model = glm::scale(model, glm::vec3(0.3f));
-        model = glm::rotate(model, glm::radians(55.0f), glm::vec3(0,1,0));
-        objShader.setMat4("model", model);
-        lamp.Draw(objShader);
+        renderModel(objShader, bronzeLantern, glm::vec3(17.0f, -9.5f, -7.0f),
+                    glm::vec3(0.4f), glm::vec3(0,1,0), 55.0f,false);
 
 
         //skybox
@@ -511,25 +454,6 @@ int main() {
         glDepthFunc(GL_LESS); // set depth function back to default
         glDepthMask(GL_TRUE);
 
-        /*
-         * glDepthMask(GL_FALSE);
-        glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
-        skyboxShader.use();
-        view = glm::mat4(glm::mat3(programState->camera.GetViewMatrix())); // remove translation from the view matrix
-        skyboxShader.setMat4("view", view);
-        skyboxShader.setMat4("projection", projection);
-
-
-        // skybox cube
-        glBindVertexArray(skyboxVAO);
-        //glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        //glBindVertexArray(0);
-        //glDepthFunc(GL_LESS); // set depth function back to default
-        glDepthMask(GL_TRUE);
-         */
-
         //if (programState->ImGuiEnabled)
         //    DrawImGui(programState);
 
@@ -545,8 +469,14 @@ int main() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
+
+    glDeleteVertexArrays(1, &boxVAO);
+    glDeleteVertexArrays(1, &skyboxVAO);
+    glDeleteBuffers(1, &boxVBO);
+    glDeleteBuffers(1, &skyboxVBO);
     glfwTerminate();
     return 0;
 }
@@ -756,4 +686,16 @@ void setWoodenBox(Shader &lightingShader, unsigned int diffuseMap, unsigned int 
     glBindVertexArray(boxVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
+}
+
+void renderModel(Shader &ourShader, Model &ourModel, glm::vec3 translateVec, glm::vec3 scalarVec, glm::vec3 rotateVec,
+                 float angle, bool rotate)
+{
+    glm::mat4 modelMat = glm::mat4(1.0f);
+    modelMat = glm::translate(modelMat, translateVec);
+    modelMat = glm::scale(modelMat, scalarVec);
+    if(rotate == true)
+        modelMat = glm::rotate(modelMat, glm::radians(angle), rotateVec);
+    ourShader.setMat4("model", modelMat);
+    ourModel.Draw(ourShader);
 }
