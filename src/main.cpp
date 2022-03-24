@@ -159,10 +159,15 @@ int main() {
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
+    //face culling
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+
     // build and compile shaders
     Shader objShader("resources/shaders/model_lighting.vs", "resources/shaders/model_lighting.fs");
     Shader skyboxShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
     Shader lightingShader("resources/shaders/lightning_maps.vs", "resources/shaders/lightning_maps.fs");
+    Shader transparentShader("resources/shaders/transparent.vs", "resources/shaders/transparent.fs");
 
     // load models
     Model deadTree("resources/objects/dead_tree/dead_tree.obj");
@@ -179,6 +184,20 @@ int main() {
 
     Model bronzeLantern("resources/objects/bronze_lantern/bronze_lantern.obj");
     bronzeLantern.SetShaderTextureNamePrefix("material.");
+
+    Model bucket("resources/objects/old_tap/old_tap.obj");
+    bucket.SetShaderTextureNamePrefix("material.");
+
+    float transparentVertices[] = {
+            // positions         // texture Coords (swapped y coordinates because texture is flipped upside down)
+            0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+            0.0f, -0.5f,  0.0f,  0.0f,  1.0f,
+            1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+
+            0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+            1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+            1.0f,  0.5f,  0.0f,  1.0f,  0.0f
+    };
 
     //set up skybox vertex data
     float skyboxVertices[] = {
@@ -297,6 +316,19 @@ int main() {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
+    // transparent VAO
+    unsigned int transparentVAO, transparentVBO;
+    glGenVertexArrays(1, &transparentVAO);
+    glGenBuffers(1, &transparentVBO);
+    glBindVertexArray(transparentVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, transparentVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glBindVertexArray(0);
+
     // load skybox
     vector<std::string> faces
             {
@@ -317,14 +349,33 @@ int main() {
     unsigned int diffuseMap = loadTexture(FileSystem::getPath("resources/textures/box/Wood_Shingles_001_basecolor.jpg").c_str());
     unsigned int specularMap = loadTexture(FileSystem::getPath("resources/textures/box/Wood_Shingles_001_height.png").c_str());
 
-    // shader configuration
+    //load grass texture
+    unsigned int transparentTexture = loadTexture(FileSystem::getPath("resources/textures/grass.png").c_str());
+
+    // water position
+    vector<glm::vec3> vegetation
+            {
+                    glm::vec3(-15.5f, -9.0f, -27.48f),
+                    glm::vec3( 15.5f, -9.0f, 17.51f),
+                    glm::vec3( 16.0f, -9.0f, 20.7f),
+                    glm::vec3(-20.3f, -9.0f, -20.3f),
+                    glm::vec3 (10.5f, -9.0f, -10.6f),
+                    glm::vec3(-17.0f, -9.0f, -13.5f)
+            };
+
+    // lighting shader configuration
     lightingShader.use();
     lightingShader.setInt("material.diffuse", 0);
     lightingShader.setInt("material.specular", 1);
 
-    // set skyboxShader
+    // water (transparent) shader configuration
+    transparentShader.use();
+    transparentShader.setInt("texture1", 0);
+
+    // skybox shader configuration
     skyboxShader.use();
     skyboxShader.setInt("skybox", 0);
+
 
     PointLight& pointLight = programState->pointLight;
 
@@ -409,8 +460,10 @@ int main() {
         // rendering the loaded models
 
         //scene
+        glDisable(GL_CULL_FACE);
         renderModel(objShader, scene, glm::vec3(0.0f, -10.0f, -10.0f),
                     glm::vec3(3.0f), glm::vec3(0.0f), 0.0f, false);
+        glEnable(GL_CULL_FACE);
 
         //tree1 - front, right
         renderModel(objShader, deadTree, glm::vec3(20.0f, -10.0f, -10.0f),
@@ -424,17 +477,39 @@ int main() {
         renderModel(objShader, deadTree, glm::vec3(-30.0f, -10.0f, -30.0f),
                     glm::vec3(3.0f), glm::vec3(0,1,0), 55.0f,true);
 
-        //red lantern
+        // red lantern
         renderModel(objShader, redLantern, glm::vec3(-24.0f, -7.3f, -0.5f),
                     glm::vec3(0.2f), glm::vec3(0,1,0), 55.0f,true);
 
-        //green lantern
+        // green lantern
         renderModel(objShader, greenLantern, glm::vec3(10.0f, -10.0f, -25.0f),
                     glm::vec3(0.007f), glm::vec3(0,1,0), 55.0f,true);
 
-        //bronze lantern
+        // bronze lantern
         renderModel(objShader, bronzeLantern, glm::vec3(17.0f, -9.5f, -7.0f),
                     glm::vec3(0.4f), glm::vec3(0,1,0), 55.0f,false);
+
+        // tap & bucket
+        renderModel(objShader, bucket, glm::vec3(-17.0f, -9.0f, -15.5f),
+                    glm::vec3(0.4f), glm::vec3(0,1,0), 90.0f,true);
+
+        // transparent shader
+        transparentShader.use();
+        transparentShader.setMat4("projection", projection);
+        transparentShader.setMat4("view", view);
+        glm::mat4 model = glm::mat4(1.0f);
+        glBindVertexArray(transparentVAO);
+        glBindTexture(GL_TEXTURE_2D, transparentTexture);
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        transparentShader.use();
+        for (unsigned int i = 0; i < vegetation.size(); i++)
+        {
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, vegetation[i]);
+            transparentShader.setMat4("model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
 
 
         //skybox
@@ -475,8 +550,11 @@ int main() {
 
     glDeleteVertexArrays(1, &boxVAO);
     glDeleteVertexArrays(1, &skyboxVAO);
+    glDeleteVertexArrays(1, &transparentVAO);
     glDeleteBuffers(1, &boxVBO);
     glDeleteBuffers(1, &skyboxVBO);
+    glDeleteBuffers(1, &transparentVBO);
+
     glfwTerminate();
     return 0;
 }
