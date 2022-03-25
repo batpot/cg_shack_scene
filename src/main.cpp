@@ -28,10 +28,20 @@ unsigned int loadTexture(char const *path);
 void setWoodenBox(Shader &lightingShader, unsigned int diffuseMap, unsigned int specularMap, unsigned int boxVAO);
 void renderModel(Shader &ourShader, Model &ourModel, glm::vec3 translateVec, glm::vec3 scalarVec, glm::vec3 rotateVec,
                  float angle, bool rotate = false);
+void renderQuad();
 
 // settings
 const unsigned int SCR_WIDTH = 900;
 const unsigned int SCR_HEIGHT = 900;
+bool hdr = false;
+bool hdrKeyPressed = false;
+float exposure = 1.0f;
+bool bloom = false;
+bool bloomKeyPressed = false;
+
+// quad
+unsigned int quadVAO = 0;
+unsigned int quadVBO;
 
 // camera
 float lastX = SCR_WIDTH / 2.0f;
@@ -168,6 +178,8 @@ int main() {
     Shader skyboxShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
     Shader lightingShader("resources/shaders/lightning_maps.vs", "resources/shaders/lightning_maps.fs");
     Shader transparentShader("resources/shaders/transparent.vs", "resources/shaders/transparent.fs");
+    Shader bloomShader("resources/shaders/bloom.vs", "resources/shaders/bloom.fs");
+    Shader blurShader("resources/shaders/blur.vs", "resources/shaders/blur.fs");
 
     // load models
     Model deadTree("resources/objects/dead_tree/dead_tree.obj");
@@ -327,7 +339,59 @@ int main() {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glBindVertexArray(0);
+
+    // configure floating point framebuffer
+    unsigned int hdrFBO;
+    glGenFramebuffers(1, &hdrFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+    unsigned int colorBuffers[2]; // create floating point color buffer
+    glGenTextures(2, colorBuffers);
+    for (unsigned int i = 0; i < 2; i++)
+    {
+        glBindTexture(GL_TEXTURE_2D, colorBuffers[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, colorBuffers[i], 0); // attach texture to framebuffer
+    }
+    unsigned int rboDepth; // create depth buffer (renderbuffer)
+    glGenRenderbuffers(1, &rboDepth);
+    glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
+    glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO); // attach buffers
+    unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+    glDrawBuffers(2, attachments);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffers[0], 0); //<=
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);//<=
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "Framebuffer not complete!" << std::endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // ping-pong-framebuffer for blurring
+    unsigned int pingPongFBO[2];
+    unsigned int pingPongColorBuffers[2];
+    glGenFramebuffers(2, pingPongFBO);
+    glGenTextures(2, pingPongColorBuffers);
+    for (unsigned int i = 0; i < 2; i++)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, pingPongFBO[i]);
+        glBindTexture(GL_TEXTURE_2D, pingPongColorBuffers[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // we clamp to the edge as the blur filter would otherwise sample repeated texture values!
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingPongColorBuffers[i], 0);
+        // also check if framebuffers are complete (no need for depth buffer)
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            cout << "Framebuffer not complete!" << endl;
+    }
 
     // load skybox
     vector<std::string> faces
@@ -376,6 +440,14 @@ int main() {
     skyboxShader.use();
     skyboxShader.setInt("skybox", 0);
 
+    // bloom shader configuration
+    bloomShader.use();
+    bloomShader.setInt("scene", 0);
+    bloomShader.setInt("bloomBlur", 1);
+
+    // blur shader configuration
+    blurShader.use();
+    blurShader.setInt("image", 0);
 
     PointLight& pointLight = programState->pointLight;
 
@@ -394,6 +466,9 @@ int main() {
         processInput(window);
 
         glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         setWoodenBox(lightingShader, diffuseMap, specularMap, boxVAO);
@@ -500,8 +575,6 @@ int main() {
         glm::mat4 model = glm::mat4(1.0f);
         glBindVertexArray(transparentVAO);
         glBindTexture(GL_TEXTURE_2D, transparentTexture);
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         transparentShader.use();
         for (unsigned int i = 0; i < vegetation.size(); i++)
         {
@@ -510,7 +583,6 @@ int main() {
             transparentShader.setMat4("model", model);
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
-
 
         //skybox
         glDepthMask(GL_FALSE);
@@ -528,6 +600,35 @@ int main() {
         glBindVertexArray(0);
         glDepthFunc(GL_LESS); // set depth function back to default
         glDepthMask(GL_TRUE);
+
+        // blur bright fragments with two-pass Gaussian Blur
+        bool horizontal = true, first_iteration = true;
+        unsigned int amount = 5;
+        blurShader.use();
+        for (unsigned int i = 0; i < amount; i++)
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, pingPongFBO[horizontal]);
+            blurShader.setInt("horizontal", horizontal);
+            glBindTexture(GL_TEXTURE_2D, first_iteration ? colorBuffers[1] : pingPongColorBuffers[!horizontal]);  // bind texture of other framebuffer (or scene if first iteration)
+            renderQuad();
+            horizontal = !horizontal;
+            if (first_iteration)
+                first_iteration = false;
+        }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        bloomShader.use();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, colorBuffers[0]);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, pingPongColorBuffers[!horizontal]);
+        bloomShader.setInt("bloom", bloom);
+        bloomShader.setFloat("exposure", exposure);
+        renderQuad();
+
+        //cout << "hdr: " << (hdr ? "on" : "off") << "| exposure: " << exposure << endl;
+
 
         //if (programState->ImGuiEnabled)
         //    DrawImGui(programState);
@@ -653,6 +754,24 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }
     }
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !bloomKeyPressed)
+    {
+        bloom = !bloom;
+        bloomKeyPressed = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE)
+    {
+        bloomKeyPressed = false;
+    }
+    if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS && !hdrKeyPressed)
+    {
+        hdr = !hdr;
+        hdrKeyPressed = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_H) == GLFW_RELEASE)
+    {
+        hdrKeyPressed = false;
+    }
 }
 
 unsigned int loadCubemap(vector<std::string> faces)
@@ -721,7 +840,6 @@ unsigned int loadTexture(char const *path)
     {
         cout << "Texture failed to load!" << path << "\n";
         stbi_image_free(data);
-
     }
 
     return textureId;
@@ -776,4 +894,30 @@ void renderModel(Shader &ourShader, Model &ourModel, glm::vec3 translateVec, glm
         modelMat = glm::rotate(modelMat, glm::radians(angle), rotateVec);
     ourShader.setMat4("model", modelMat);
     ourModel.Draw(ourShader);
+}
+void renderQuad()
+{
+    if (quadVAO == 0)
+    {
+        float quadVertices[] = {
+                // positions        // texture Coords
+                -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+                -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+                1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+                1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        };
+        // setup plane VAO
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
+        glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    }
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
 }
