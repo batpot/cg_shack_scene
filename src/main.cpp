@@ -85,12 +85,12 @@ void ProgramState::SaveToFile(std::string filename) {
         << clearColor.g << '\n'
         << clearColor.b << '\n'
         << ImGuiEnabled << '\n';
-        //<< camera.Position.x << '\n'
-        //<< camera.Position.y << '\n'
-        //<< camera.Position.z << '\n'
-        //<< camera.Front.x << '\n'
-        //<< camera.Front.y << '\n'
-        //<< camera.Front.z << '\n';
+    //<< camera.Position.x << '\n'
+    //<< camera.Position.y << '\n'
+    //<< camera.Position.z << '\n'
+    //<< camera.Front.x << '\n'
+    //<< camera.Front.y << '\n'
+    //<< camera.Front.z << '\n';
 }
 
 void ProgramState::LoadFromFile(std::string filename) {
@@ -100,12 +100,12 @@ void ProgramState::LoadFromFile(std::string filename) {
            >> clearColor.g
            >> clearColor.b
            >> ImGuiEnabled;
-           //>> camera.Position.x
-           //>> camera.Position.y
-           //>> camera.Position.z
-           //>> camera.Front.x
-           //>> camera.Front.y
-           //>> camera.Front.z;
+        //>> camera.Position.x
+        //>> camera.Position.y
+        //>> camera.Position.z
+        //>> camera.Front.x
+        //>> camera.Front.y
+        //>> camera.Front.z;
     }
 }
 
@@ -370,7 +370,7 @@ int main() {
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffers[0], 0); //<=
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);//<=
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        std::cout << "Framebuffer not complete!" << std::endl;
+        cout << "Framebuffer not complete!" << endl;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // ping-pong-framebuffer for blurring
@@ -396,16 +396,17 @@ int main() {
     // load skybox
     vector<std::string> faces
             {
-                    FileSystem::getPath("resources/textures/sky/right.jpg"),
-                    FileSystem::getPath("resources/textures/sky/left.jpg"),
-                    FileSystem::getPath("resources/textures/sky/bottom.jpg"),
-                    FileSystem::getPath("resources/textures/sky/top.jpg"),
-                    FileSystem::getPath("resources/textures/sky/front.jpg"),
-                    FileSystem::getPath("resources/textures/sky/back.jpg")
+                    FileSystem::getPath("resources/textures/skybox/right.jpg"),
+                    FileSystem::getPath("resources/textures/skybox/left.jpg"),
+                    FileSystem::getPath("resources/textures/skybox/bottom.jpg"),
+                    FileSystem::getPath("resources/textures/skybox/top.jpg"),
+                    FileSystem::getPath("resources/textures/skybox/front.jpg"),
+                    FileSystem::getPath("resources/textures/skybox/back.jpg")
             };
 
     // load cubemap
-    stbi_set_flip_vertically_on_load(true);
+    stbi_set_flip_vertically_on_load(true); // darker parts of the clouds are 'above' sunny parts because of the mood
+    // of the scene
     unsigned int cubemapTexture = loadCubemap(faces);
     stbi_set_flip_vertically_on_load(false);
 
@@ -419,9 +420,9 @@ int main() {
     // water position
     vector<glm::vec3> vegetation
             {
-                    glm::vec3(-15.5f, -9.0f, -27.48f),
+                    glm::vec3(-15.5f, -9.0f, -23.48f),
                     glm::vec3( 15.5f, -9.0f, 17.51f),
-                    glm::vec3( 16.0f, -9.0f, 20.7f),
+                    glm::vec3( 16.0f, -9.0f, 13.7f),
                     glm::vec3(-20.3f, -9.0f, -20.3f),
                     glm::vec3 (10.5f, -9.0f, -10.6f),
                     glm::vec3(-17.0f, -9.0f, -13.5f)
@@ -451,8 +452,6 @@ int main() {
 
     PointLight& pointLight = programState->pointLight;
 
-    // draw in wireframe
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // render loop
     // -----------
@@ -519,18 +518,18 @@ int main() {
         objShader.setFloat("pointLights[2].quadratic", 0.1f);
 
         //spotlight 1
-       /* objShader.setVec3("spotLights[0].position", glm::vec3(10.0f, 40.0f, 10.0f));
-        objShader.setVec3("spotLights[0].direction", glm::vec3(0.0f, 0.0f, 0.0f));
-        objShader.setVec3("spotLights[0].ambient", 0.05f, 0.05f, 0.05f);
-        objShader.setVec3("spotLights[0].diffuse", 0.1f, 0.1f, 0.1f);
-        objShader.setVec3("spotLights[0].specular", 0.0f, 1.0f, 0.0f);
+        /* objShader.setVec3("spotLights[0].position", glm::vec3(10.0f, 40.0f, 10.0f));
+         objShader.setVec3("spotLights[0].direction", glm::vec3(0.0f, 0.0f, 0.0f));
+         objShader.setVec3("spotLights[0].ambient", 0.05f, 0.05f, 0.05f);
+         objShader.setVec3("spotLights[0].diffuse", 0.1f, 0.1f, 0.1f);
+         objShader.setVec3("spotLights[0].specular", 0.0f, 1.0f, 0.0f);
 
-        objShader.setFloat("spotLights[0].constant", 1.0f);
-        objShader.setFloat("spotLights[0].linear", 0.09);
-        objShader.setFloat("spotLights[0].quadratic", 0.032);
-        objShader.setFloat("spotLights[0].cutOff", glm::cos(glm::radians(2.5f)));
-        objShader.setFloat("spotLights[0].outerCutOff", glm::cos(glm::radians(5.0f)));
-*/
+         objShader.setFloat("spotLights[0].constant", 1.0f);
+         objShader.setFloat("spotLights[0].linear", 0.09);
+         objShader.setFloat("spotLights[0].quadratic", 0.032);
+         objShader.setFloat("spotLights[0].cutOff", glm::cos(glm::radians(2.5f)));
+         objShader.setFloat("spotLights[0].outerCutOff", glm::cos(glm::radians(5.0f)));
+ */
 
         // rendering the loaded models
 
@@ -581,6 +580,8 @@ int main() {
             model = glm::mat4(1.0f);
             model = glm::translate(model, vegetation[i]);
             transparentShader.setMat4("model", model);
+            glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
 
