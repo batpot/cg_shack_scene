@@ -24,19 +24,17 @@
 - [x] transformations: used for models and wooden box
 - [x] coordinate systems - local space, world space, view space, clip space, screen space: used for models and wooden box
 - [x] camera: used camera class from learnopengl
-- [ ] colors
+- [x] colors
 - [x] basic lighting - ambient, diffuse, specular
-- [ ] materials
+- [x] materials
 - [x] lighting maps, light casters, multiple lights: for box and lanterns
 - [x] assimp, mesh, models
 - [x] model and lighting: lanterns and object lighting
-- [ ] imgui ?
-- [ ] text rendering ?
 - [x] blending: grass with blending (discard)
 - [x] face culling
-- [ ] advanced lighting: Blinn-Phong
+- [x] advanced lighting: Blinn-Phong
 - [x] A: Framebuffers, Cubemaps, Instancing, Anti Aliasing: implemented skybox (cubemaps)
-- [ ] B: Point shadows; Normal mapping, Parallax Mapping; HDR, Bloom; Deffered Shading; SSAO
+- [x] B: Point shadows; Normal mapping, Parallax Mapping; HDR, Bloom; Deffered Shading; SSAO: implemented Bloom
 
 other
 - [x] scene
