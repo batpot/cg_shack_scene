@@ -1,0 +1,18 @@
+# Blender 3.1.0 MTL File: 'None'
+# www.blender.org
+
+newmtl initialShadingGroup
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Fern_Plant_Preview_FREE_Model_BASE_COLOR_(Albedo)_MAP.png
+map_Bump Fern_Plant_Preview_FREE_Model_NORMAL_MAP.png
+map_Ns Fern_Plant_Preview_FREE_Model_ROUGHTNESS_MAP.png
+map_refl Fern_Plant_Preview_FREE_Model_METALLIC_MAP.png
+map_Ks Fern_Plant_Preview_FREE_Model_OPACITY_MAP.png
+
