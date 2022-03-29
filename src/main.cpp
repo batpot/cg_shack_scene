@@ -180,6 +180,7 @@ int main() {
     Shader transparentShader("resources/shaders/transparent.vs", "resources/shaders/transparent.fs");
     Shader bloomShader("resources/shaders/bloom.vs", "resources/shaders/bloom.fs");
     Shader blurShader("resources/shaders/blur.vs", "resources/shaders/blur.fs");
+    Shader lightSourceShader("resources/shaders/light_source.vs", "resources/shaders/light_source.fs");
 
     // load models
     Model deadTree("resources/objects/dead_tree/dead_tree.obj");
@@ -191,14 +192,18 @@ int main() {
     Model redLantern("resources/objects/red_lantern/red_lantern.obj");
     redLantern.SetShaderTextureNamePrefix("material.");
 
-    Model greenLantern("resources/objects/green_lantern/green_lantern.obj");
-    greenLantern.SetShaderTextureNamePrefix("material.");
+    Model plant("resources/objects/plant/plant.obj");
+    plant.SetShaderTextureNamePrefix("material.");
 
     Model bronzeLantern("resources/objects/bronze_lantern/bronze_lantern.obj");
     bronzeLantern.SetShaderTextureNamePrefix("material.");
 
     Model bucket("resources/objects/old_tap/old_tap.obj");
     bucket.SetShaderTextureNamePrefix("material.");
+
+    Model trees("resources/objects/trees_pack/trees_pack.obj");
+    trees.SetShaderTextureNamePrefix("material.");
+
 
     float transparentVertices[] = {
             // positions         // texture Coords (swapped y coordinates because texture is flipped upside down)
@@ -452,7 +457,6 @@ int main() {
 
     PointLight& pointLight = programState->pointLight;
 
-
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window)) {
@@ -482,6 +486,16 @@ int main() {
         objShader.setFloat("material.shininess", 32.0f);
         objShader.setMat4("projection", projection);
         objShader.setMat4("view", view);
+
+        lightSourceShader.use();
+        lightSourceShader.setMat4("projection", projection);
+        lightSourceShader.setMat4("view", view);
+
+       // model = glm::mat4(1.0f);
+       // model = glm::translate(model, glm::vec3(10.0f, -10.0f, -25.0f));
+       // model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));
+       // lightSourceShader.setMat4("model", model);
+       // redLantern.Draw(lightSourceShader);
 
         // directional light
         objShader.use();
@@ -551,21 +565,34 @@ int main() {
         renderModel(objShader, deadTree, glm::vec3(-30.0f, -10.0f, -30.0f),
                     glm::vec3(3.0f), glm::vec3(0,1,0), 55.0f,true);
 
-        // red lantern
-        renderModel(objShader, redLantern, glm::vec3(-24.0f, -7.3f, -0.5f),
+        // red lantern - on the table
+        renderModel(lightSourceShader, redLantern, glm::vec3(-24.0f, -7.3f, -0.5f),
                     glm::vec3(0.2f), glm::vec3(0,1,0), 55.0f,true);
 
-        // green lantern
-        renderModel(objShader, greenLantern, glm::vec3(10.0f, -10.0f, -25.0f),
-                    glm::vec3(0.007f), glm::vec3(0,1,0), 55.0f,true);
+        // red2 lantern
+        renderModel(lightSourceShader, redLantern, glm::vec3(10.0f, -10.0f, -25.0f),
+                  glm::vec3(0.4f), glm::vec3(0,1,0), 55.0f,true);
 
         // bronze lantern
-        renderModel(objShader, bronzeLantern, glm::vec3(17.0f, -9.5f, -7.0f),
-                    glm::vec3(0.4f), glm::vec3(0,1,0), 55.0f,false);
+        renderModel(lightSourceShader, bronzeLantern, glm::vec3(17.0f, -9.5f, -7.0f),
+                   glm::vec3(0.4f), glm::vec3(0,1,0), 55.0f,false);
 
         // tap & bucket
         renderModel(objShader, bucket, glm::vec3(-17.0f, -9.0f, -15.5f),
                     glm::vec3(0.4f), glm::vec3(0,1,0), 90.0f,true);
+
+        // plant with big leaves
+        renderModel(objShader, plant, glm::vec3(13.0f, -10.0f, -7.0f),
+                    glm::vec3(0.2f), glm::vec3(0,1,0), 55.0f,false);
+
+        // plant with big leaves
+        renderModel(objShader, plant, glm::vec3(-24.0f, -10.0f, -8.0f),
+                    glm::vec3(0.2f), glm::vec3(0,1,0), 55.0f,true);
+
+        // trees
+        renderModel(objShader, trees, glm::vec3(0.0f, -10.0f, 6.0f),
+                    glm::vec3(1.0f), glm::vec3(0,1,0), 55.0f,false);
+
 
         // transparent shader
         transparentShader.use();
@@ -888,6 +915,7 @@ void setWoodenBox(Shader &lightingShader, unsigned int diffuseMap, unsigned int 
 void renderModel(Shader &ourShader, Model &ourModel, glm::vec3 translateVec, glm::vec3 scalarVec, glm::vec3 rotateVec,
                  float angle, bool rotate)
 {
+    ourShader.use();
     glm::mat4 modelMat = glm::mat4(1.0f);
     modelMat = glm::translate(modelMat, translateVec);
     modelMat = glm::scale(modelMat, scalarVec);
