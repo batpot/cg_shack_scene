@@ -1,0 +1,16 @@
+# Blender 3.1.0 MTL File: 'None'
+# www.blender.org
+
+newmtl Rock_05.004
+Ns 738.599976
+Ka 1.000000 1.000000 1.000000
+Kd 0.878000 0.878000 0.878000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd RockSet05Base-Diffuse.png
+map_Ks RockSet05Base-Specular.png
+map_Bump RockSet05Base-Normal.png
+map_Ns RockSet05Base-Height.png

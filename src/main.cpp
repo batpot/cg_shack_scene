@@ -7,7 +7,6 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #include <learnopengl/filesystem.h>
 #include <learnopengl/shader.h>
@@ -26,12 +25,12 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 unsigned int loadCubemap(vector<string> faces);
 unsigned int loadTexture(char const *path);
 void setWoodenBox(Shader &lightingShader, unsigned int diffuseMap, unsigned int specularMap, unsigned int boxVAO);
-void renderModel(Shader &ourShader, Model &ourModel, glm::vec3 translateVec, glm::vec3 scalarVec, glm::vec3 rotateVec,
-                 float angle, bool rotate = false);
+void renderModel(Shader &ourShader, Model &ourModel, const glm::vec3 &translateVec, const glm::vec3 &scalarVec,
+                 const glm::vec3 &rotateVec, float angle, bool rotate = false);
 void renderQuad();
 
 // settings
-const unsigned int SCR_WIDTH = 900;
+const unsigned int SCR_WIDTH = 1200;
 const unsigned int SCR_HEIGHT = 900;
 bool hdr = false;
 bool hdrKeyPressed = false;
@@ -72,15 +71,15 @@ struct ProgramState {
     float backpackScale = 1.0f;
     PointLight pointLight;
     ProgramState()
-            : camera(glm::vec3(0.0f, 0.0f, 30.0f)) {}
+            : camera(glm::vec3(-7.0f, 0.0f, 26.0f)) {}
 
-    void SaveToFile(std::string filename);
+    void SaveToFile(string filename);
 
-    void LoadFromFile(std::string filename);
+    void LoadFromFile(string filename);
 };
 
-void ProgramState::SaveToFile(std::string filename) {
-    std::ofstream out(filename);
+void ProgramState::SaveToFile(string filename) {
+    ofstream out(filename);
     out << clearColor.r << '\n'
         << clearColor.g << '\n'
         << clearColor.b << '\n'
@@ -93,8 +92,8 @@ void ProgramState::SaveToFile(std::string filename) {
     //<< camera.Front.z << '\n';
 }
 
-void ProgramState::LoadFromFile(std::string filename) {
-    std::ifstream in(filename);
+void ProgramState::LoadFromFile(string filename) {
+    ifstream in(filename);
     if (in) {
         in >> clearColor.r
            >> clearColor.g
@@ -114,6 +113,7 @@ ProgramState *programState;
 void DrawImGui(ProgramState *programState);
 
 int main() {
+
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
@@ -127,8 +127,8 @@ int main() {
 
     // glfw window creation
     // --------------------
-    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "CyberCity", NULL, NULL);
-    if (window == NULL) {
+    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "shack scene", nullptr, nullptr);
+    if (window == nullptr) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
@@ -198,11 +198,38 @@ int main() {
     Model bronzeLantern("resources/objects/bronze_lantern/bronze_lantern.obj");
     bronzeLantern.SetShaderTextureNamePrefix("material.");
 
-    Model bucket("resources/objects/old_tap/old_tap.obj");
-    bucket.SetShaderTextureNamePrefix("material.");
+    Model oldTap("resources/objects/old_tap/old_tap.obj");
+    oldTap.SetShaderTextureNamePrefix("material.");
 
     Model trees("resources/objects/trees_pack/trees_pack.obj");
     trees.SetShaderTextureNamePrefix("material.");
+
+    Model rockA("resources/objects/rock_set/rockA.obj");
+    rockA.SetShaderTextureNamePrefix("material.");
+
+    Model rockB("resources/objects/rock_set/rockB.obj");
+    rockB.SetShaderTextureNamePrefix("material.");
+
+    Model rockC("resources/objects/rock_set/rockC.obj");
+    rockC.SetShaderTextureNamePrefix("material.");
+
+    Model rockD("resources/objects/rock_set/rockD.obj");
+    rockD.SetShaderTextureNamePrefix("material.");
+
+    Model rockE("resources/objects/rock_set/rockE.obj");
+    rockE.SetShaderTextureNamePrefix("material.");
+
+    Model rockF("resources/objects/rock_set/rockF.obj");
+    rockF.SetShaderTextureNamePrefix("material.");
+
+    Model rockG("resources/objects/rock_set/rockG.obj");
+    rockG.SetShaderTextureNamePrefix("material.");
+
+    Model cactusPot("resources/objects/cactus_pot/CACTUS_CONCRETE_POT_10K.obj");
+    cactusPot.SetShaderTextureNamePrefix("material.");
+
+    Model drop("resources/objects/drop/drop.obj");
+    drop.SetShaderTextureNamePrefix("material.");
 
 
     float transparentVertices[] = {
@@ -316,7 +343,7 @@ int main() {
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     glBindVertexArray(boxVAO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)nullptr);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
@@ -330,7 +357,7 @@ int main() {
     glBindVertexArray(skyboxVAO);
     glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)nullptr);
     glEnableVertexAttribArray(0);
 
     // transparent VAO
@@ -341,7 +368,7 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, transparentVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)nullptr);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -357,7 +384,7 @@ int main() {
     for (unsigned int i = 0; i < 2; i++)
     {
         glBindTexture(GL_TEXTURE_2D, colorBuffers[i]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -387,7 +414,7 @@ int main() {
     {
         glBindFramebuffer(GL_FRAMEBUFFER, pingPongFBO[i]);
         glBindTexture(GL_TEXTURE_2D, pingPongColorBuffers[i]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // we clamp to the edge as the blur filter would otherwise sample repeated texture values!
@@ -491,12 +518,6 @@ int main() {
         lightSourceShader.setMat4("projection", projection);
         lightSourceShader.setMat4("view", view);
 
-       // model = glm::mat4(1.0f);
-       // model = glm::translate(model, glm::vec3(10.0f, -10.0f, -25.0f));
-       // model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));
-       // lightSourceShader.setMat4("model", model);
-       // redLantern.Draw(lightSourceShader);
-
         // directional light
         objShader.use();
         objShader.setVec3("dirLight.direction", 30.0f, -10.0f, 30.0f);
@@ -513,7 +534,7 @@ int main() {
         objShader.setFloat("pointLights[0].linear", 0.2);
         objShader.setFloat("pointLights[0].quadratic", 0.1);
 
-        //point light 2 - red lantern TODO not working ???
+        //point light 2 - red lantern
         objShader.setVec3("pointLights[1].position", glm::vec3(-24.0f, -7.0f, -0.5f));
         objShader.setVec3("pointLights[1].ambient",  0.05f, 0.05f, 0.05f);
         objShader.setVec3("pointLights[1].diffuse", 0.94f, 0.98f, 0.78f);
@@ -531,19 +552,30 @@ int main() {
         objShader.setFloat("pointLights[2].linear", 0.2f);
         objShader.setFloat("pointLights[2].quadratic", 0.1f);
 
-        //spotlight 1
-        /* objShader.setVec3("spotLights[0].position", glm::vec3(10.0f, 40.0f, 10.0f));
-         objShader.setVec3("spotLights[0].direction", glm::vec3(0.0f, 0.0f, 0.0f));
-         objShader.setVec3("spotLights[0].ambient", 0.05f, 0.05f, 0.05f);
-         objShader.setVec3("spotLights[0].diffuse", 0.1f, 0.1f, 0.1f);
-         objShader.setVec3("spotLights[0].specular", 0.0f, 1.0f, 0.0f);
+        // lantern with movement
+        glm::mat4 movementMat = glm::mat4(1.0f);
+        movementMat = glm::translate(movementMat, glm::vec3(-10.7f, -4.6f, -16.7f));
+        movementMat = glm::scale(movementMat, glm::vec3(0.4f, 0.4f, 0.4f));
+        movementMat = glm::rotate(movementMat, sin(currentFrame * 1.5f) * glm::radians(60.0f), glm::vec3(0, 0, 1));
+        movementMat = glm::translate(movementMat, glm::vec3(0.0f, -3.0f, 0.0f));
 
-         objShader.setFloat("spotLights[0].constant", 1.0f);
-         objShader.setFloat("spotLights[0].linear", 0.09);
-         objShader.setFloat("spotLights[0].quadratic", 0.032);
-         objShader.setFloat("spotLights[0].cutOff", glm::cos(glm::radians(2.5f)));
-         objShader.setFloat("spotLights[0].outerCutOff", glm::cos(glm::radians(5.0f)));
- */
+        glm::mat4 modelMovement = glm::mat4(1.0f);
+        modelMovement = glm::translate(movementMat, glm::vec3(-10.9f, -10.0f, 3.7f));
+        glm::vec3 positionMovement = movementMat * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        glm::vec3 base = modelMovement * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        glm::vec3 spotlightMovement = normalize(positionMovement - base);
+
+        objShader.use();
+        objShader.setVec3("spotLights[0].position", base);
+        objShader.setVec3("spotLights[0].direction", spotlightMovement);
+        objShader.setVec3("spotLights[0].ambient", 0.0f, 0.0f, 0.0f);
+        objShader.setVec3("spotLights[0].diffuse", 0.5f, 0.5f, 0.5f);
+        objShader.setVec3("spotLights[0].specular", 1.0f, 1.0f, 1.0f);
+        objShader.setFloat("spotLights[0].constant", 1.0f);
+        objShader.setFloat("spotLights[0].linear", 0.09);
+        objShader.setFloat("spotLights[0].quadratic", 0.032);
+        objShader.setFloat("spotLights[0].cutOff", glm::cos(glm::radians(16.5f)));
+        objShader.setFloat("spotLights[0].outerCutOff", glm::cos(glm::radians(25.0f)));
 
         // rendering the loaded models
 
@@ -569,29 +601,66 @@ int main() {
         renderModel(lightSourceShader, redLantern, glm::vec3(-24.0f, -7.3f, -0.5f),
                     glm::vec3(0.2f), glm::vec3(0,1,0), 55.0f,true);
 
-        // red2 lantern
+        // red2 lantern - behind the cabin
         renderModel(lightSourceShader, redLantern, glm::vec3(10.0f, -10.0f, -25.0f),
                   glm::vec3(0.4f), glm::vec3(0,1,0), 55.0f,true);
+
+        // bronze lantern - the one that is moving
+        lightSourceShader.use();
+        lightSourceShader.setMat4("model", movementMat);
+        bronzeLantern.Draw(lightSourceShader);
 
         // bronze lantern
         renderModel(lightSourceShader, bronzeLantern, glm::vec3(17.0f, -9.5f, -7.0f),
                    glm::vec3(0.4f), glm::vec3(0,1,0), 55.0f,false);
 
-        // tap & bucket
-        renderModel(objShader, bucket, glm::vec3(-17.0f, -9.0f, -15.5f),
-                    glm::vec3(0.4f), glm::vec3(0,1,0), 90.0f,true);
+        // tap & oldTap
+        renderModel(objShader, oldTap, glm::vec3(-17.0f, -9.0f, -15.5f),
+                    glm::vec3(0.4f), glm::vec3(0,1,0), 90.0f, false);
+       // renderModel(objShader, drop, glm::vec3(-19.0f, -2.3f, -15.5f),
+         //           glm::vec3(0.4f), glm::vec3(0,1,0), 90.0f, false);
+
+        glm::mat4 dropMat = glm::mat4(1.0f);
+        dropMat = glm::translate(dropMat, glm::vec3(-18.0f, -2.3f, -15.5f));
+        dropMat = glm::scale(dropMat, glm::vec3(0.4f, 0.4f, 0.4f));
+        dropMat = glm::rotate(dropMat, sin(currentFrame) * glm::radians(30.0f), glm::vec3(0, 0, 1));
+        dropMat = glm::translate(dropMat, glm::vec3(-3.0f, 0.0f, 0.0f));
+        objShader.use();
+        objShader.setMat4("model", dropMat);
+        //drop.Draw(objShader);
+
+        // cactus pot
+        renderModel(objShader, cactusPot, glm::vec3(-10.7f, -4.25f, -16.5f),
+                    glm::vec3(4.0f), glm::vec3(0,1,0), 55.0f,false);
 
         // plant with big leaves
         renderModel(objShader, plant, glm::vec3(13.0f, -10.0f, -7.0f),
-                    glm::vec3(0.2f), glm::vec3(0,1,0), 55.0f,false);
-
-        // plant with big leaves
-        renderModel(objShader, plant, glm::vec3(-24.0f, -10.0f, -8.0f),
-                    glm::vec3(0.2f), glm::vec3(0,1,0), 55.0f,true);
+                    glm::vec3(0.2f), glm::vec3(0,1,0), 30.0f,true);
 
         // trees
-        renderModel(objShader, trees, glm::vec3(0.0f, -10.0f, 6.0f),
+        renderModel(objShader, trees, glm::vec3(-1.0f, -10.0f, -27.0f),
                     glm::vec3(1.0f), glm::vec3(0,1,0), 55.0f,false);
+
+        // rocks
+        renderModel(objShader, rockA, glm::vec3(-10.0f, -10.0f, -3.0f),
+                    glm::vec3(0.7f), glm::vec3(0,1,0), 55.0f,false);
+        renderModel(objShader, rockB, glm::vec3(-8.5f, -10.0f, -2.5f),
+                    glm::vec3(0.5f), glm::vec3(0,1,0), 55.0f,true);
+        renderModel(objShader, rockC, glm::vec3(-9.0f, -10.0f, -0.7f),
+                    glm::vec3(0.7f), glm::vec3(0,1,0), 30.0f,true);
+        renderModel(objShader, rockG, glm::vec3(-10.5f, -10.0f, -0.9f),
+                    glm::vec3(1.0f), glm::vec3(0,1,0), 30.0f,true);
+
+        renderModel(objShader, rockE, glm::vec3(7.0f, -10.0f, -25.0f),
+                    glm::vec3(1.0f), glm::vec3(0,1,0), 30.0f,true);
+        renderModel(objShader, rockF, glm::vec3(8.0f, -10.0f, -26.7f),
+                    glm::vec3(1.0f), glm::vec3(0,1,0), 30.0f,true);
+
+        renderModel(objShader, rockC, glm::vec3(7.0f, -10.0f, 4.0f),
+                    glm::vec3(0.5f), glm::vec3(0,1,0), 55.0f,false);
+        renderModel(objShader, rockE, glm::vec3(8.0f, -10.0f, 3.0f),
+                    glm::vec3(0.5f), glm::vec3(0,1,0), 55.0f,false);
+
 
 
         // transparent shader
@@ -772,7 +841,7 @@ void DrawImGui(ProgramState *programState) {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods){
     if (key == GLFW_KEY_F1 && action == GLFW_PRESS) {
         programState->ImGuiEnabled = !programState->ImGuiEnabled;
         if (programState->ImGuiEnabled) {
@@ -912,15 +981,15 @@ void setWoodenBox(Shader &lightingShader, unsigned int diffuseMap, unsigned int 
 
 }
 
-void renderModel(Shader &ourShader, Model &ourModel, glm::vec3 translateVec, glm::vec3 scalarVec, glm::vec3 rotateVec,
-                 float angle, bool rotate)
+void renderModel(Shader &ourShader, Model &ourModel, const glm::vec3 &translateVec, const glm::vec3 &scalarVec,
+                 const glm::vec3 &rotateVec, float angle, bool rotate)
 {
     ourShader.use();
     glm::mat4 modelMat = glm::mat4(1.0f);
     modelMat = glm::translate(modelMat, translateVec);
     modelMat = glm::scale(modelMat, scalarVec);
-    if(rotate == true)
-        modelMat = glm::rotate(modelMat, glm::radians(angle), rotateVec);
+    if(rotate)
+        modelMat = glm::rotate(modelMat, angle, rotateVec);
     ourShader.setMat4("model", modelMat);
     ourModel.Draw(ourShader);
 }
@@ -942,7 +1011,7 @@ void renderQuad()
         glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)nullptr);
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     }
