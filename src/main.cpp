@@ -18,8 +18,8 @@
 using namespace std;
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
-void mouse_callback(GLFWwindow *window, double xpos, double ypos);
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+void mouse_callback(GLFWwindow *window, double xPos, double yPos);
+void scroll_callback(GLFWwindow *window, double xOffset, double yOffset);
 void processInput(GLFWwindow *window);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 unsigned int loadCubemap(vector<string> faces);
@@ -227,10 +227,6 @@ int main() {
 
     Model cactusPot("resources/objects/cactus_pot/CACTUS_CONCRETE_POT_10K.obj");
     cactusPot.SetShaderTextureNamePrefix("material.");
-
-    Model drop("resources/objects/drop/drop.obj");
-    drop.SetShaderTextureNamePrefix("material.");
-
 
     float transparentVertices[] = {
             // positions         // texture Coords (swapped y coordinates because texture is flipped upside down)
@@ -489,7 +485,7 @@ int main() {
     while (!glfwWindowShouldClose(window)) {
         // per-frame time logic
         // --------------------
-        float currentFrame = glfwGetTime();
+        float currentFrame = (float)glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
@@ -603,7 +599,7 @@ int main() {
 
         // red2 lantern - behind the cabin
         renderModel(lightSourceShader, redLantern, glm::vec3(10.0f, -10.0f, -25.0f),
-                  glm::vec3(0.4f), glm::vec3(0,1,0), 55.0f,true);
+                    glm::vec3(0.4f), glm::vec3(0,1,0), 55.0f,false);
 
         // bronze lantern - the one that is moving
         lightSourceShader.use();
@@ -612,22 +608,11 @@ int main() {
 
         // bronze lantern
         renderModel(lightSourceShader, bronzeLantern, glm::vec3(17.0f, -9.5f, -7.0f),
-                   glm::vec3(0.4f), glm::vec3(0,1,0), 55.0f,false);
+                    glm::vec3(0.4f), glm::vec3(0,1,0), 55.0f,false);
 
         // tap & oldTap
         renderModel(objShader, oldTap, glm::vec3(-17.0f, -9.0f, -15.5f),
                     glm::vec3(0.4f), glm::vec3(0,1,0), 90.0f, false);
-       // renderModel(objShader, drop, glm::vec3(-19.0f, -2.3f, -15.5f),
-         //           glm::vec3(0.4f), glm::vec3(0,1,0), 90.0f, false);
-
-        glm::mat4 dropMat = glm::mat4(1.0f);
-        dropMat = glm::translate(dropMat, glm::vec3(-18.0f, -2.3f, -15.5f));
-        dropMat = glm::scale(dropMat, glm::vec3(0.4f, 0.4f, 0.4f));
-        dropMat = glm::rotate(dropMat, sin(currentFrame) * glm::radians(30.0f), glm::vec3(0, 0, 1));
-        dropMat = glm::translate(dropMat, glm::vec3(-3.0f, 0.0f, 0.0f));
-        objShader.use();
-        objShader.setMat4("model", dropMat);
-        //drop.Draw(objShader);
 
         // cactus pot
         renderModel(objShader, cactusPot, glm::vec3(-10.7f, -4.25f, -16.5f),
@@ -660,8 +645,6 @@ int main() {
                     glm::vec3(0.5f), glm::vec3(0,1,0), 55.0f,false);
         renderModel(objShader, rockE, glm::vec3(8.0f, -10.0f, 3.0f),
                     glm::vec3(0.5f), glm::vec3(0,1,0), 55.0f,false);
-
-
 
         // transparent shader
         transparentShader.use();
@@ -724,9 +707,6 @@ int main() {
         bloomShader.setFloat("exposure", exposure);
         renderQuad();
 
-        //cout << "hdr: " << (hdr ? "on" : "off") << "| exposure: " << exposure << endl;
-
-
         //if (programState->ImGuiEnabled)
         //    DrawImGui(programState);
 
@@ -783,27 +763,27 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
 
 // glfw: whenever the mouse moves, this callback is called
 // -------------------------------------------------------
-void mouse_callback(GLFWwindow *window, double xpos, double ypos) {
+void mouse_callback(GLFWwindow *window, double xPos, double yPos) {
     if (firstMouse) {
-        lastX = xpos;
-        lastY = ypos;
+        lastX = (float)xPos;
+        lastY = (float)yPos;
         firstMouse = false;
     }
 
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+    float xOffset = (float)xPos - lastX;
+    float yOffset = lastY - (float)yPos; // reversed since y-coordinates go from bottom to top
 
-    lastX = xpos;
-    lastY = ypos;
+    lastX = (float)xPos;
+    lastY = (float)yPos;
 
     if (programState->CameraMouseMovementUpdateEnabled)
-        programState->camera.ProcessMouseMovement(xoffset, yoffset);
+        programState->camera.ProcessMouseMovement(xOffset, yOffset);
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
 // ----------------------------------------------------------------------
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
-    programState->camera.ProcessMouseScroll(yoffset);
+void scroll_callback(GLFWwindow *window, double xOffset, double yOffset) {
+    programState->camera.ProcessMouseScroll((float)yOffset);
 }
 
 void DrawImGui(ProgramState *programState) {
@@ -890,7 +870,7 @@ unsigned int loadCubemap(vector<std::string> faces)
         }
         else
         {
-            std::cout << "Cubemap tex failed to load at path: " << faces[i] << std::endl;
+            cout << "cube map tex failed to load at path: " << faces[i] << endl;
             stbi_image_free(data);
         }
     }
