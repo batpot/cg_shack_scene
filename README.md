@@ -15,15 +15,15 @@ This is a project done for the course of Computer graphics, 3rd year of Computer
 
 # assets
 [Shack scene by nowelbesi](https://www.turbosquid.com/3d-models/3d-model-shack-scene/1060364)  
-[Dead tree by FATIH ORHAN](https://www.turbosquid.com/3d-models/dead-tree-model-1868329)
-[Rock set by wernie](https://www.cgtrader.com/free-3d-models/exterior/landscape/rock-set-05-base)
-[Red lantern by Shahid Abdullah](https://www.cgtrader.com/free-3d-models/interior/other/old-lantern-pbr)
-[Trees pack by Seregins](https://www.turbosquid.com/3d-models/3d-model-trees-pack/1091559)
-[Cactus pot by SPACESCAN](https://www.turbosquid.com/3d-models/3d-cactus-concrete-pot-1488079)
-[Old water tap with bucket by Shahid Abdullah](https://www.cgtrader.com/free-3d-models/household/other/old-water-tap-pbr)
-[Bronze lantern by Khan Yasin](https://www.cgtrader.com/free-3d-models/furniture/lamp/old-lantern-cbf79294-7ccd-424d-b35f-006dbfcebc52)
+[Dead tree by FATIH ORHAN](https://www.turbosquid.com/3d-models/dead-tree-model-1868329)  
+[Rock set by wernie](https://www.cgtrader.com/free-3d-models/exterior/landscape/rock-set-05-base)  
+[Red lantern by Shahid Abdullah](https://www.cgtrader.com/free-3d-models/interior/other/old-lantern-pbr)  
+[Trees pack by Seregins](https://www.turbosquid.com/3d-models/3d-model-trees-pack/1091559)  
+[Cactus pot by SPACESCAN](https://www.turbosquid.com/3d-models/3d-cactus-concrete-pot-1488079)  
+[Old water tap with bucket by Shahid Abdullah](https://www.cgtrader.com/free-3d-models/household/other/old-water-tap-pbr)  
+[Bronze lantern by Khan Yasin](https://www.cgtrader.com/free-3d-models/furniture/lamp/old-lantern-cbf79294-7ccd-424d-b35f-006dbfcebc52) 
 
-[Wooden box texture by Katsukagi](https://3dtextures.me/2021/10/18/wood-shingles-001/)
+[Wooden box texture by Katsukagi](https://3dtextures.me/2021/10/18/wood-shingles-001/)  
 [Skybox texture by Hipshot](https://www.jose-emilio.com/scenejs/plugins/node/skybox/textures/miramarClouds.jpg)
 
 # required elements
@@ -44,7 +44,7 @@ This is a project done for the course of Computer graphics, 3rd year of Computer
 - [x] A: Framebuffers, Cubemaps, Instancing, Anti Aliasing: implemented skybox (cubemaps)
 - [x] B: Point shadows; Normal mapping, Parallax Mapping; HDR, Bloom; Deffered Shading; SSAO: implemented HDR, Bloom
 
-other
+# other
 - [x] scene
 - [x] lantern + light (s)
 - [ ] lake/well/water
