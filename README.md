@@ -1,7 +1,7 @@
 # shack scene
 This is a project done for the course of Computer graphics, 3rd year of Computer science, Faculty of Mathematics, Belgrade. It's implemented in OpenGL/C++ using GLFW library. Used `https://github.com/matf-racunarska-grafika/project_base`
 
-![](./video.mp4)
+![](./preview.gif)
 
 # instructions
 1. `git clone https://github.com/matf-racunarska-grafika/project_base.git`
